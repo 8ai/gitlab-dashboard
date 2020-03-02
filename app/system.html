@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Main</title>
+  <script>
+    const ipcRenderer = require('electron').ipcRenderer;
+    const shell = require("electron").shell;
+  </script>
+  <script type="text/javascript" src="./vue.min.js"></script>
+  <script type="text/javascript" src="./system.js"></script>
+  <link rel="stylesheet" href="./system.css">
+</head>
+<body>
+  <div id="app">
+    <div class="error" v-if="error">
+      {{error}}
+    </div>
+    <div class="header">
+      <span class="loading" class="icon" :style="'visibility:' + (keys.loading > 0 ? 'visible' : 'hidden')">🌀</span>
+      <button type="button" class="openSettings icon" @click="keys.showSettings = true;" :disabled="keys.showSettings">🛠</button>
+    </div>
+    <div v-if="!list || !list.length" class="waiting">
+      <span v-if="!settings.gitlab_url || !settings.token">Configure gitlab url and token firts. <button type="button" class="openSettings" @click="keys.showSettings = true;">Settings</button></span>
+      <span v-else-if="!settings.project">Select the project. <button type="button" class="openSettings" @click="keys.showSettings = true;">Settings</button></span>
+      <span v-else-if="!settings.board">Select the board. <button type="button" class="openSettings" @click="keys.showSettings = true;">Settings</button></span>
+      <span v-else>Ожидание получения списка</span>
+    </div>
+    <div v-else class="cols" @wheel="wheel($event)">
+      <div class="col" v-for="col in list" :id="'col'+col.id" @drop="dragndrop($event, 'drop', col)" @dragenter="dragndrop($event, 'enter', col)" @dragover="dragndrop($event, 'over')" @dragleave="dragndrop($event, 'leave', col)">
+        <h3>{{col.title}}</h3>
+        <div class="rows">
+          <div class="row" v-for="row in col.issues" :id="'row'+row.id" v-if="!settings.user || settings.user && row.assignees.filter(a=>a.username==settings.user).length" :title="row.description" draggable="true" @dragstart="dragndrop($event, 'start', col, row)" @dragend="dragndrop($event, 'end')" :class="{temp: row.temp, move: row.move}">
+            <a @click="open(row)">{{row.title}} <span class="rowId">#{{row.iid}}</span></a>
+            <div v-if="row.labels.length" class="labels">
+              <span v-for="label in row.labels" class='label' :style="'background: ' + (labels[label] && labels[label].color || '#fafafa') + ';color: ' + (labels[label] && labels[label].text_color || '#fff')">{{labels[label] && labels[label].label || label}}</span> 
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="keys.showSettings" class="settings">
+      <div>
+        <div class="head">Configuration <button type="button" class="close" @click="keys.showSettings = false">X</button></div>
+        <div class="content">
+          <div class="line">
+            <span>Gitlab url root *</span>
+            <input type="text" v-model="settings.gitlab_url">
+            <i>/api/v4/ will be auto appended</i>
+          </div>
+          <div class="line">
+            <span>Access Token *</span>
+            <input type="text" v-model="settings.token">
+            <i>Obtain new at <b>{{settings.gitlab_url||"%gitlab_url%"}}</b>/profile/personal_access_tokens</i>
+          </div>
+          <div class="line">
+            <span>Update issues interval in seconds</span>
+            <input type="text" value="30" v-model="settings.interval" placeholder="Default: 30 seconds">
+          </div>
+          <div>
+            <button type="button" class="authApi" @click="saveSettingsAndTryLoadProjects($event)">Save config and load projects</button>
+          </div>
+          <hr>
+          <div class="line">
+            <span>Project</span>
+            <select @change="selectProject($event)" v-model="settings.project" :disabled="!projects.length">
+              <option v-for="proj in projects" :value="proj.id">{{proj.path}} - {{proj.description || proj.name}}</option>
+            </select>
+          </div>
+          <div class="line">
+            <span>Board</span>
+            <select @change="selectBoard($event)" v-model="settings.board" :disabled="!boards.length">
+              <option v-for="board in boards" :value="board.id">{{board.name || board.id}}</option>
+            </select>
+          </div>
+          <div class="line">
+            <span>Filter by user</span>
+            <select @change="selectUser($event)" v-model="settings.user" :disabled="!users.length">
+              <option v-for="user in users" :value="user.username">{{user.name}}</option>
+            </select>
+          </div>
+          <div class="line">
+            <span>Notificate about new issue</span>
+            <select @change="setNotificationLevel($event, 'new')" v-model="settings.notifyAboutNew">
+              <option value="none">No</option>
+              <option value="any">Any issues</option>
+              <option value="mine" :disabled="!settings.user">Assigned to me</option>
+            </select>
+            <i><b>Assigned to me</b> allowed only when <b>Filter by user</b> selected.</i>
+          </div>
+          <div class="line">
+            <span>Notificate about change the issue</span>
+            <select @change="setNotificationLevel($event, 'change')" v-model="settings.notifyAboutChange">
+              <option value="none">No</option>
+              <option value="any">Any issues</option>
+              <option value="mine" :disabled="!settings.user">Assigned to me</option>
+            </select>
+            <i><b>Assigned to me</b> allowed only when <b>Filter by user</b> selected.</i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,34 @@
+{
+  "name": "usr.aidev.gitlabdashboard",
+  "version": "1.0.0",
+  "description": "gitlabdashboard",
+  "main": "app.js",
+  "author": "8ai",
+  "dependencies": {},
+  "devDependencies": {
+    "electron": "^7.1.1",
+    "electron-builder": "^21.2.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "./node_modules/.bin/electron .",
+    "build": "electron-builder",
+    "dist": "electron-builder",
+    "preversion": "mkdir .git || true",
+    "postversion": "npm run build"
+  },
+  "postinstall": "electron-builder install-app-deps",
+  "license": "ISC",
+  "build": {
+    "appId": "usr.aidev.system",
+    "win": {
+      "icon": "1691716",
+      "target": "nsis"
+    },
+    "directories": {
+      "buildResources": "../build",
+      "app": "./",
+      "output": "../release"
+    }
+  }
+}
