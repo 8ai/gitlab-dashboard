@@ -7,7 +7,7 @@ ipcRenderer.on('set', (ev, data)=>{
 
 window.addEventListener('keyup', ev=>{
   if(ev.code == 'F12') ipcRenderer.send('get', {type: 'devTools'});
-  if(ev.code == 'KeyR' && ev.ctrlKey) app.getList();
+  if(ev.code == 'KeyR' && ev.ctrlKey) app.init();
 }, true);
 
 window.addEventListener('click', ev=>{
@@ -36,11 +36,13 @@ window.addEventListener('load', ev=>{
       error: null,
       keys: {
         showSettings: false,
-        loading: 0
+        loading: 0,
+        si: null
       },
     },
     methods: {
       init(){
+        clearInterval(this.keys.si);
         let arr = [];
         if(this.settings.gitlab_url && this.settings.token){
           if(!this.projects.length){
@@ -62,7 +64,7 @@ window.addEventListener('load', ev=>{
 
         Promise.all(arr).then(d=>{
           this.getList();
-          setInterval(this.getList, this.settings.interval*1000 || 30000);
+          this.keys.si = setInterval(this.getList, this.settings.interval*1000 || 30000);
         }).catch(e=>{});
       },
       getLabels(){
@@ -181,7 +183,7 @@ window.addEventListener('load', ev=>{
         });
         lists.push({
           id: 1,
-          title: 'Closed',
+          title: 'Closed'
         });
 
         data.forEach(is=>{
@@ -206,8 +208,13 @@ window.addEventListener('load', ev=>{
           }
         });
 
+        let store = localStorage.hidden;
+        if(store) try{store = JSON.parse(store)}catch(e){store = null}
+        if(!store) store = {};
+
         this.list = lists.map(l=>{
           l.issues = keys[l.title];
+          l.hidden = store[l.title] || false;
           return l;
         });
       },
@@ -396,6 +403,21 @@ window.addEventListener('load', ev=>{
             cb();
           });
         });
+      },
+      hide(ev, col){
+        if(!col.hidden){
+          col.hidden = true;
+        }
+        else{
+          col.hidden = true;
+        }
+
+        let store = localStorage.hidden;
+        if(store) try{store = JSON.parse(store)}catch(e){store = null}
+        if(!store) store = {};
+        store[col.title] = col.hidden;
+
+        localStorage.hidden = JSON.stringify(store);
       },
       request(url, data=null, conf={}, cb){
         let headers = Object.assign({'Private-Token': this.settings.token}, conf && conf.headers);

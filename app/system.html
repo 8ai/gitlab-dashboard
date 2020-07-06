@@ -26,8 +26,8 @@
       <span v-else>Ожидание получения списка</span>
     </div>
     <div v-else class="cols" @wheel="wheel($event)">
-      <div class="col" v-for="col in list" :id="'col'+col.id" @drop="dragndrop($event, 'drop', col)" @dragenter="dragndrop($event, 'enter', col)" @dragover="dragndrop($event, 'over')" @dragleave="dragndrop($event, 'leave', col)">
-        <h3>{{col.title}}</h3>
+      <div class="col" v-for="col in list" :id="'col'+col.id" @drop="dragndrop($event, 'drop', col)" @dragenter="dragndrop($event, 'enter', col)" @dragover="dragndrop($event, 'over')" @dragleave="dragndrop($event, 'leave', col)" :class="{hidden: col.hidden}">
+        <h3 class="action" @click="hide($event, col)">{{col.title}}</h3>
         <div class="rows">
           <div class="row" v-for="row in col.issues" :id="'row'+row.id" v-if="!settings.user || settings.user && row.assignees.filter(a=>a.username==settings.user).length" :title="row.description" draggable="true" @dragstart="dragndrop($event, 'start', col, row)" @dragend="dragndrop($event, 'end')" :class="{temp: row.temp, move: row.move}">
             <a @click="open(row)">{{row.title}} <span class="rowId">#{{row.iid}}</span></a>
