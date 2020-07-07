@@ -409,7 +409,7 @@ window.addEventListener('load', ev=>{
           col.hidden = true;
         }
         else{
-          col.hidden = true;
+          col.hidden = false;
         }
 
         let store = localStorage.hidden;
